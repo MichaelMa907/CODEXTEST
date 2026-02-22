@@ -1,39 +1,58 @@
-# Context-Memory ChatGPT Wrapper
+# ChatGPT Wrapper Website (localhost-ready)
 
-A Python wrapper around Chat Completions that:
+This project is now an actual deployable web app.
 
-1. Keeps full verbatim history while it fits in the model context window.
-2. When it no longer fits, compresses the oldest turns into a rolling summary.
-3. Still retains the full local transcript in memory so your app can audit/export all turns.
+## What it does
 
-## Install
+- Serves a chat UI at `http://localhost:8000`.
+- Uses a backend wrapper that remembers the whole transcript in memory.
+- Sends full recent history until context limit is near.
+- Rolls older turns into a summary when token budget gets tight.
+
+## Setup
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Usage
+Set your API key:
 
-```python
-from openai import OpenAI
-from chatgpt_wrapper import ContextMemoryChatWrapper
-
-client = OpenAI(api_key="YOUR_KEY")
-
-bot = ContextMemoryChatWrapper(
-    client=client,
-    model="gpt-4o-mini",
-    max_context_tokens=128_000,
-    response_tokens=512,
-    system_prompt="You are a helpful assistant.",
-)
-
-print(bot.ask("Remember that my favorite color is green."))
-print(bot.ask("What's my favorite color?"))
+```bash
+export OPENAI_API_KEY="your_key_here"
 ```
 
-## Notes
+## Run locally
 
-- `full_transcript` always contains all turns ever seen in this process.
-- `live_messages` contains only the newest verbatim turns sent to the model.
-- `rolling_summary` stores compressed old turns once context fills up.
+```bash
+python app.py
+```
+
+Then open: `http://localhost:8000`
+
+## Config via environment variables
+
+- `OPENAI_MODEL` (default: `gpt-4o-mini`)
+- `MAX_CONTEXT_TOKENS` (default: `128000`)
+- `RESPONSE_TOKENS` (default: `512`)
+
+## API
+
+`POST /api/chat`
+
+Request:
+
+```json
+{
+  "message": "hello",
+  "session_id": "optional-existing-session"
+}
+```
+
+Response includes:
+- `reply`
+- `session_id`
+- `full_transcript_count`
+- `live_message_count`
+- `has_summary`
